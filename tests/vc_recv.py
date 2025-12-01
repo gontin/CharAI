@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 import discord
 from discord.ext import commands, voice_recv
 
@@ -44,4 +44,4 @@ async def on_ready():
 async def setup_hook():
     await bot.add_cog(Testing(bot))
 
-bot.run('MTQzODY4MTg2NTg4NzQxNjQyMw.Gpret0.vS5x0Febn5SyxY4Z3QN7dp9dZ5M6Zxflc_fWKE')
+bot.run(os.getenv('DISCORD_TOKEN'))

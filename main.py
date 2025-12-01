@@ -56,7 +56,6 @@ class Disc_Bot(discord.Client):
             
             self.user_buffers[user.id] += data.pcm
 
-            audio_call = 
 
 
         except Exception as e:
