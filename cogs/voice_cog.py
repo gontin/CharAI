@@ -56,9 +56,9 @@ class VoiceCog(commands.Cog):
                 vc = await ctx.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient, reconnect=True)
                 vc.listen(voice_recv.BasicSink(self.callback))
 
-                await ctx.send("entrei na call dog")
+                await ctx.send("entrandu")
             else:
-                await ctx.send("q call vei, seu bobo")
+                await ctx.send("não to vendo call nenhuma :<")
 
         except Exception as e:
             print(f"erro na conexão de voz: {e}")
@@ -70,9 +70,9 @@ class VoiceCog(commands.Cog):
         try:
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
-                await ctx.send("tabein")
+                await ctx.send("saindu")
             else:
-                await ctx.send("nem em call eu to dog")
+                await ctx.send("m-mas eu nem to ai!")
 
         except Exception as e:
             print(f"erro na desconexão(???): {e}")
