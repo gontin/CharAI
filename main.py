@@ -26,7 +26,7 @@ discord.opus._load_default()
 # char_id = 'f_0wvFomHhJJJRYrwgtyeCLt-ny8SbDQrDk0kPkAtms'
 historico = "data/histchar.json"
 
-        
+
 class Disc_Bot(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,7 +65,7 @@ class Disc_Bot(discord.Client):
     async def conectar_voice(self, mensagem):
         try:
             if mensagem.author.voice:
-                        
+                    
                 self.voice_client = await mensagem.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient, reconnect = True)
                 self.voice_client.listen(voice_recv.BasicSink(self.callback))
                 
