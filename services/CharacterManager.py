@@ -11,7 +11,6 @@ class CharacterManager:
 
     async def iniciar(self):
         try:
-            """Conecta na API e cria o chat. Deve ser chamado no on_ready do bot."""
             print("conectando ao Character.ai...")
             self.client = await get_client(token=self.token)
             self.me = await self.client.account.fetch_me()
@@ -25,12 +24,9 @@ class CharacterManager:
             print(f"ERROR ao iniciar char_ai: {e}")
 
     async def enviar_mensagem(self, texto, nome_autor):
-        """Envia texto e retorna apenas o texto da resposta."""
         if not self.client or not self.chat:
             raise Exception("SEU ANSIOSO CALMA KRL")
 
-
-        # Formata a mensagem para a IA saber quem falou
         msg_formatada = f"{nome_autor} disse: {texto}"
         
         resposta = await self.client.chat.send_message(
@@ -40,13 +36,8 @@ class CharacterManager:
         )
         
         return resposta.get_primary_candidate().text
-    
-
-
-
 
     async def gerar_voz(self, texto, voice_id=22):
-        """Gera o áudio (bytes) a partir de um texto."""
         if not self.client:
             raise Exception("CharacterManager não foi iniciado!")
             
