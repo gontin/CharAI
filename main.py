@@ -27,16 +27,15 @@ historico = "data/histchar.json"
 
 class Disc_Bot(commands.Bot):
     def __init__(self):
-        
+
         intents = discord.Intents.default()
         intents.message_content = True
         intents.voice_states = True
         super().__init__(command_prefix="!", intents=intents, help_command=None)
-        
+
         self.char_ai = CharacterManager(CHAR_TOKEN, CHAR_ID)
-        
+
         self.historico_conversa = self.ler_historico()
-        
 
     async def setup_hook(self):
         print("carregando cogs")
@@ -45,7 +44,7 @@ class Disc_Bot(commands.Bot):
         except Exception as e:
             print(f"Errin ao carregar cog de voz: {e}")
         return await super().setup_hook()
-    
+
     async def on_ready(self):
         try:
 
@@ -53,7 +52,6 @@ class Disc_Bot(commands.Bot):
             print("oiii, estou funcionando")
         except Exception as e:
             print(f"Erro: {e}")
-
 
     def ler_historico(self):
         try:
@@ -69,9 +67,9 @@ class Disc_Bot(commands.Bot):
     async def on_message(self, message):
         if message.author == self.user:
             return
-        
+
         await self.process_commands(message)
-        
+
         if message.channel.name == "geral" and not message.content.startswith(self.command_prefix):
             await self.char_ai_msg(message.content, message.author, message.channel)
 
@@ -96,6 +94,7 @@ class Disc_Bot(commands.Bot):
         except Exception as e:
             print(f"erro no character.ai: {e}")
             return None
+
 
 if __name__ == "__main__":
     bot = Disc_Bot()
