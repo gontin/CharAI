@@ -26,6 +26,7 @@ class VoiceCog(commands.Cog):
         
     def transcrever (self, uid, audio_data):
         print("começou a transcrever")
+        inicio = time.time()
         try:
             arq_memoria = io.BytesIO()
             data_np = np.frombuffer(audio_data, dtype=np.int32)
@@ -37,7 +38,7 @@ class VoiceCog(commands.Cog):
             with sr.AudioFile(arq_memoria) as source:
                 audio = rec.record(source)  
             texto = rec.recognize_google(audio, language="pt-BR")
-            print("terminou")
+            print(f"terminou em {time.time()-inicio:.2f}")
             return (uid, texto)
         
         except Exception as e:
@@ -77,6 +78,8 @@ class VoiceCog(commands.Cog):
                 valid_result = [r for r in result if r is not None]
                 for i in valid_result:
                     print(f"{i[0]} disse: {i[1]}")
+                # 
+                
                 self.ocupado_processando = False
 
     @commands.command(name="call")
