@@ -16,13 +16,15 @@ from services.CharacterManager import CharacterManager
 load_dotenv()
 
 # configs globais
-CHAR_TOKEN = os.getenv('CHAR_TOKEN')
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-CHAR_ID = 'hPIEsrcL-qyxS6bNjEQIsTDcT-DQA7vouIs7t9ccqJ0'  # character ai id
+CHAR_TOKEN = os.getenv("CHAR_TOKEN")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+CHAR_ID = os.getenv("CHAR_ID")  # character ai id
 
 discord.opus._load_default()
 
+# id do quantiu
 # char_id = 'f_0wvFomHhJJJRYrwgtyeCLt-ny8SbDQrDk0kPkAtms'
+
 historico = "data/histchar.json"
 
 
@@ -39,8 +41,10 @@ class Disc_Bot(commands.Bot):
         self.historico_conversa = self.ler_historico()
         self.active_tasks = set()
         self.disponivel = True
+
         async def reboot_wrapper(ctx):
             await self.reboot(ctx)
+
         self.add_command(commands.Command(reboot_wrapper, name="reboot"))
 
     async def setup_hook(self):
@@ -61,13 +65,13 @@ class Disc_Bot(commands.Bot):
 
     def ler_historico(self):
         try:
-            with open(historico, 'r', encoding='utf-8') as e:
+            with open(historico, "r", encoding="utf-8") as e:
                 return json.load(e)
         except (FileNotFoundError, json.JSONDecodeError):
             return []
 
     def salvar_historico(self):
-        with open(historico, 'w', encoding='utf-8') as f:
+        with open(historico, "w", encoding="utf-8") as f:
             json.dump(self.historico_conversa, f, ensure_ascii=False, indent=4)
 
     async def on_message(self, message):
@@ -76,32 +80,36 @@ class Disc_Bot(commands.Bot):
 
         await self.process_commands(message)
 
-        if message.channel.name == "amy" and not message.content.startswith(self.command_prefix):
+        if message.channel.name == "amy" and not message.content.startswith(
+            self.command_prefix
+        ):
             if self.disponivel:
-                task = asyncio.create_task(self.char_ai_msg(message.content, message.author, message.channel))
+                task = asyncio.create_task(
+                    self.char_ai_msg(message.content, message.author, message.channel)
+                )
                 self.active_tasks.add(task)
                 task.add_done_callback(self.active_tasks.discard)
-        
+
     async def reboot(self, ctx):
         print("rebootando...")
         await ctx.send("AAAaAaAAaAaAaAaAaaAAAAAAAAAA")
         await self.char_ai.reboot()
-        
+
     async def char_ai_msg(self, texto, autor, canal):
         try:
 
             self.disponivel = False
             async with canal.typing():
-                resposta = await self.char_ai.enviar_mensagem(f"{autor.display_name} disse: {texto}")
-            self.historico_conversa.append({
-                "role": autor.display_name,
-                "content": texto
-            })
+                resposta = await self.char_ai.enviar_mensagem(
+                    f"{autor.display_name} disse: {texto}"
+                )
+            self.historico_conversa.append(
+                {"role": autor.display_name, "content": texto}
+            )
 
-            self.historico_conversa.append({
-                "role": self.user.name,
-                "content": resposta
-            })
+            self.historico_conversa.append(
+                {"role": self.user.name, "content": resposta}
+            )
 
             self.salvar_historico()
             await canal.send(resposta)

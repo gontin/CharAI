@@ -21,52 +21,61 @@ class VoiceCog(commands.Cog):
         self.vc = None
         self.ocupado_processando = False
 
-        self.amy_names = [" amy ", " eime ", " ami ", " aime ", " emmy ", " emi ", " m "]
+        self.amy_names = [
+            " amy ",
+            " eime ",
+            " ami ",
+            " aime ",
+            " emmy ",
+            " emi ",
+            " m ",
+        ]
 
         self.fiscal_de_silencio.start()
-        
+
         # self.vosk_model = Model("model")
 
     def cog_unload(self):
         self.fiscal_de_silencio.stop()
-        
-    def transcrever (self, uid, audio_data):
+
+    def transcrever(self, uid, audio_data):
         inicio = time.time()
         try:
             arq_memoria = io.BytesIO()
             data_np = np.frombuffer(audio_data, dtype=np.int32)
-            
-            
+
             # RECOGNIZER DO GOOGLE
             scipy.io.wavfile.write(arq_memoria, 48000, data_np)
             arq_memoria.seek(0)
-            
+
             rec = sr.Recognizer()
-            
+
             with sr.AudioFile(arq_memoria) as source:
-                audio = rec.record(source)  
+                audio = rec.record(source)
             texto = rec.recognize_google(audio, language="pt-BR")
-            
+
             # VOSK
             # data_np = data_np.astype(np.int16)
-            
+
             # data_16k = data_np[::3]
             # rec = KaldiRecognizer(self.vosk_model, 16000)
             # rec.AcceptWaveform(data_16k.tobytes())
             # result_json = json.loads(rec.FinalResult())
             # texto = result_json.get("text", "")
-            
-            
+
             print(f"terminou em {time.time()-inicio:.2f}")
             return (uid, texto)
-        
+
         except Exception as e:
             print(f"Erro ao transcrever: {e}")
+
     async def processar_voz(self):
+        print(f"processando voz...")
+        inicio = time.time()
         try:
             buffers_copia = self.user_buffers.copy()
             self.user_buffers.clear()
-            
+
             # temporario
             loop = asyncio.get_running_loop()
             tasks_transcrever = []
@@ -79,32 +88,38 @@ class VoiceCog(commands.Cog):
             valid_result = [r for r in result if r is not None]
             msg = ""
             for i in valid_result:
-                
+
                 nome = self.user_names.get(i[0], f"user [{i[0]}]")
                 msg += f"{nome} disse: {i[1]}\n"
-                    
+
                 print(f"{nome} disse: {i[1]}")
-            
+
             resposta = await self.bot.char_ai.enviar_mensagem(msg)
-            audio_bytes = await self.bot.char_ai.gerar_voz("b62c616c-7866-44fd-8572-58b63c4bd014")
+            print(f"Amy disse: {resposta}")
+            audio_bytes = await self.bot.char_ai.gerar_voz(
+                os.getenv("CHAR_VOZID")
+            )
             caminho_resp = "./data/temp/resposta_ia.mp3"
             os.makedirs(os.path.dirname(caminho_resp), exist_ok=True)
 
             with open(caminho_resp, "wb") as f:
                 f.write(audio_bytes)
-            
+
             if self.vc:
-                vc = self.vc
-                if vc.is_connected():
-                    # Para de ouvir (embora o callback já filtre eco, é bom garantir)
-                    vc.stop_listening()
-                    if vc.is_playing(): vc.stop()
-                    
-                    vc.play(
+                if self.vc.is_connected():
+                    self.vc.stop_listening()
+                    if self.vc.is_playing():
+                        self.vc.stop()
+                    self.vc.play(
                         discord.FFmpegPCMAudio(caminho_resp),
                     )
+                    print(f"Terminou de processar em {time.time()-inicio:.2f}")
+                    if not self.vc.is_listening():
+                        self.vc.listen(voice_recv.BasicSink(self.callback))
+
         except Exception as e:
             print(f"Erro ao processar: {e}")
+
     @tasks.loop(seconds=1.0)
     async def fiscal_de_silencio(self):
 
@@ -117,7 +132,7 @@ class VoiceCog(commands.Cog):
 
         tempo_silencio = agora - self.ultimo_momento_fala_global
 
-        if tempo_silencio > 2.5:
+        if tempo_silencio > 1.5:
             total_bytes = 0
             for user_id in self.user_buffers:
                 total_bytes += len(self.user_buffers[user_id])
@@ -134,7 +149,9 @@ class VoiceCog(commands.Cog):
         try:
             if ctx.author.voice:
 
-                self.vc = await ctx.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient, reconnect=True)
+                self.vc = await ctx.author.voice.channel.connect(
+                    cls=voice_recv.VoiceRecvClient, reconnect=True
+                )
                 self.vc.listen(voice_recv.BasicSink(self.callback))
 
                 await ctx.send("entrandu")
@@ -163,19 +180,18 @@ class VoiceCog(commands.Cog):
         try:
             if user is None or user.id == self.bot.user.id:
                 return
-            
-            if self.bot.voice_clients and any(vc.is_playing() for vc in self.bot.voice_clients):
+
+            if self.bot.voice_clients and any(
+                vc.is_playing() for vc in self.bot.voice_clients
+            ):
                 return
-            
+
             if self.ocupado_processando:
                 return
-            
-            
-            
+
             if user.id not in self.user_buffers:
-                self.user_buffers[user.id] = b''
+                self.user_buffers[user.id] = b""
                 self.user_names[user.id] = user.display_name
-                
 
             self.user_buffers[user.id] += data.pcm
 
