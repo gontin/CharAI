@@ -39,6 +39,9 @@ class Disc_Bot(commands.Bot):
         self.historico_conversa = self.ler_historico()
         self.active_tasks = set()
         self.disponivel = True
+        async def reboot_wrapper(ctx):
+            await self.reboot(ctx)
+        self.add_command(commands.Command(reboot_wrapper, name="reboot"))
 
     async def setup_hook(self):
         print("carregando cogs")
@@ -79,10 +82,10 @@ class Disc_Bot(commands.Bot):
                 self.active_tasks.add(task)
                 task.add_done_callback(self.active_tasks.discard)
         
-    @commands.command(name="reboot")
     async def reboot(self, ctx):
+        print("rebootando...")
         await ctx.send("AAAaAaAAaAaAaAaAaaAAAAAAAAAA")
-        self.char_ai.reboot()
+        await self.char_ai.reboot()
         
     async def char_ai_msg(self, texto, autor, canal):
         try:

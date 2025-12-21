@@ -18,6 +18,7 @@ class VoiceCog(commands.Cog):
         self.user_names = {}
 
         self.ultimo_momento_fala_global = 0
+        self.vc = None
         self.ocupado_processando = False
 
         self.amy_names = [" amy ", " eime ", " ami ", " aime ", " emmy ", " emi ", " m "]
@@ -61,6 +62,49 @@ class VoiceCog(commands.Cog):
         
         except Exception as e:
             print(f"Erro ao transcrever: {e}")
+    async def processar_voz(self):
+        try:
+            buffers_copia = self.user_buffers.copy()
+            self.user_buffers.clear()
+            
+            # temporario
+            loop = asyncio.get_running_loop()
+            tasks_transcrever = []
+            print("começou a transcrever")
+            for uid, audio_data in buffers_copia.items():
+                tasks_transcrever.append(
+                    loop.run_in_executor(None, self.transcrever, uid, audio_data)
+                )
+            result = await asyncio.gather(*tasks_transcrever)
+            valid_result = [r for r in result if r is not None]
+            msg = ""
+            for i in valid_result:
+                
+                nome = self.user_names.get(i[0], f"user [{i[0]}]")
+                msg += f"{nome} disse: {i[1]}\n"
+                    
+                print(f"{nome} disse: {i[1]}")
+            
+            resposta = await self.bot.char_ai.enviar_mensagem(msg)
+            audio_bytes = await self.bot.char_ai.gerar_voz("b62c616c-7866-44fd-8572-58b63c4bd014")
+            caminho_resp = "./data/temp/resposta_ia.mp3"
+            os.makedirs(os.path.dirname(caminho_resp), exist_ok=True)
+
+            with open(caminho_resp, "wb") as f:
+                f.write(audio_bytes)
+            
+            if self.vc:
+                vc = self.vc
+                if vc.is_connected():
+                    # Para de ouvir (embora o callback já filtre eco, é bom garantir)
+                    vc.stop_listening()
+                    if vc.is_playing(): vc.stop()
+                    
+                    vc.play(
+                        discord.FFmpegPCMAudio(caminho_resp),
+                    )
+        except Exception as e:
+            print(f"Erro ao processar: {e}")
     @tasks.loop(seconds=1.0)
     async def fiscal_de_silencio(self):
 
@@ -80,28 +124,9 @@ class VoiceCog(commands.Cog):
 
             if total_bytes > 1000000:
                 self.ocupado_processando = True
-                
-                buffers_copia = self.user_buffers.copy()
-                self.user_buffers.clear()
-                
-                # temporario
-                loop = asyncio.get_running_loop()
-                tasks_transcrever = []
-                print("começou a transcrever")
-                for uid, audio_data in buffers_copia.items():
-                    tasks_transcrever.append(
-                        loop.run_in_executor(None, self.transcrever, uid, audio_data)
-                    )
-                result = await asyncio.gather(*tasks_transcrever)
-                valid_result = [r for r in result if r is not None]
-            
-                for i in valid_result:
-                    
-                    nome = self.user_names.get(i[0], f"user [{i[0]}]")
-                        
-                    print(f"{nome} disse: {i[1]}")
-                
-                resposta = await self.bot.char_ai.enviar_mensagem()
+
+                await self.processar_voz()
+
                 self.ocupado_processando = False
 
     @commands.command(name="call")
@@ -109,8 +134,8 @@ class VoiceCog(commands.Cog):
         try:
             if ctx.author.voice:
 
-                vc = await ctx.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient, reconnect=True)
-                vc.listen(voice_recv.BasicSink(self.callback))
+                self.vc = await ctx.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient, reconnect=True)
+                self.vc.listen(voice_recv.BasicSink(self.callback))
 
                 await ctx.send("entrandu")
             else:
@@ -126,6 +151,7 @@ class VoiceCog(commands.Cog):
         try:
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
+                self.vc = None
                 await ctx.send("saindu")
             else:
                 await ctx.send("m-mas eu nem to ai!")
