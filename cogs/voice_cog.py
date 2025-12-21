@@ -7,12 +7,15 @@ import numpy as np
 import speech_recognition as sr
 import os
 import io
+from vosk import Model, KaldiRecognizer
+import json
 
 
 class VoiceCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.user_buffers = {}
+        self.user_names = {}
 
         self.ultimo_momento_fala_global = 0
         self.ocupado_processando = False
@@ -20,16 +23,20 @@ class VoiceCog(commands.Cog):
         self.amy_names = [" amy ", " eime ", " ami ", " aime ", " emmy ", " emi ", " m "]
 
         self.fiscal_de_silencio.start()
+        
+        # self.vosk_model = Model("model")
 
     def cog_unload(self):
         self.fiscal_de_silencio.stop()
         
     def transcrever (self, uid, audio_data):
-        print("começou a transcrever")
         inicio = time.time()
         try:
             arq_memoria = io.BytesIO()
             data_np = np.frombuffer(audio_data, dtype=np.int32)
+            
+            
+            # RECOGNIZER DO GOOGLE
             scipy.io.wavfile.write(arq_memoria, 48000, data_np)
             arq_memoria.seek(0)
             
@@ -38,12 +45,22 @@ class VoiceCog(commands.Cog):
             with sr.AudioFile(arq_memoria) as source:
                 audio = rec.record(source)  
             texto = rec.recognize_google(audio, language="pt-BR")
+            
+            # VOSK
+            # data_np = data_np.astype(np.int16)
+            
+            # data_16k = data_np[::3]
+            # rec = KaldiRecognizer(self.vosk_model, 16000)
+            # rec.AcceptWaveform(data_16k.tobytes())
+            # result_json = json.loads(rec.FinalResult())
+            # texto = result_json.get("text", "")
+            
+            
             print(f"terminou em {time.time()-inicio:.2f}")
             return (uid, texto)
         
         except Exception as e:
             print(f"Erro ao transcrever: {e}")
-            
     @tasks.loop(seconds=1.0)
     async def fiscal_de_silencio(self):
 
@@ -70,16 +87,21 @@ class VoiceCog(commands.Cog):
                 # temporario
                 loop = asyncio.get_running_loop()
                 tasks_transcrever = []
+                print("começou a transcrever")
                 for uid, audio_data in buffers_copia.items():
                     tasks_transcrever.append(
                         loop.run_in_executor(None, self.transcrever, uid, audio_data)
                     )
                 result = await asyncio.gather(*tasks_transcrever)
                 valid_result = [r for r in result if r is not None]
+            
                 for i in valid_result:
-                    print(f"{i[0]} disse: {i[1]}")
-                # 
+                    
+                    nome = self.user_names.get(i[0], f"user [{i[0]}]")
+                        
+                    print(f"{nome} disse: {i[1]}")
                 
+                resposta = await self.bot.char_ai.enviar_mensagem()
                 self.ocupado_processando = False
 
     @commands.command(name="call")
@@ -115,12 +137,19 @@ class VoiceCog(commands.Cog):
         try:
             if user is None or user.id == self.bot.user.id:
                 return
-
+            
             if self.bot.voice_clients and any(vc.is_playing() for vc in self.bot.voice_clients):
                 return
             
+            if self.ocupado_processando:
+                return
+            
+            
+            
             if user.id not in self.user_buffers:
                 self.user_buffers[user.id] = b''
+                self.user_names[user.id] = user.display_name
+                
 
             self.user_buffers[user.id] += data.pcm
 

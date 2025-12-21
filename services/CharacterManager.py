@@ -22,12 +22,15 @@ class CharacterManager:
             return greeting.get_primary_candidate().text
         except Exception as e:
             print(f"ERROR ao iniciar char_ai: {e}")
-
-    async def enviar_mensagem(self, texto, nome_autor):
+            
+    async def reboot(self):
+        self.chat, greeting = await self.client.chat.create_chat(self.char_id)
+        
+    async def enviar_mensagem(self, texto):
         if not self.client or not self.chat:
             raise Exception("SEU ANSIOSO CALMA KRL")
 
-        msg_formatada = f"{nome_autor} disse: {texto}"
+        msg_formatada = f"{texto}"
         
         resposta = await self.client.chat.send_message(
             self.char_id, 

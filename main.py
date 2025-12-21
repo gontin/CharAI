@@ -6,6 +6,7 @@ import os
 import scipy
 import numpy as np
 import time
+import asyncio
 
 from PyCharacterAI import get_client
 from PyCharacterAI.exceptions import SessionClosedError
@@ -36,6 +37,8 @@ class Disc_Bot(commands.Bot):
         self.char_ai = CharacterManager(CHAR_TOKEN, CHAR_ID)
 
         self.historico_conversa = self.ler_historico()
+        self.active_tasks = set()
+        self.disponivel = True
 
     async def setup_hook(self):
         print("carregando cogs")
@@ -70,16 +73,25 @@ class Disc_Bot(commands.Bot):
 
         await self.process_commands(message)
 
-        if message.channel.name == "geral" and not message.content.startswith(self.command_prefix):
-            await self.char_ai_msg(message.content, message.author, message.channel)
-
+        if message.channel.name == "amy" and not message.content.startswith(self.command_prefix):
+            if self.disponivel:
+                task = asyncio.create_task(self.char_ai_msg(message.content, message.author, message.channel))
+                self.active_tasks.add(task)
+                task.add_done_callback(self.active_tasks.discard)
+        
+    @commands.command(name="reboot")
+    async def reboot(self, ctx):
+        await ctx.send("AAAaAaAAaAaAaAaAaaAAAAAAAAAA")
+        self.char_ai.reboot()
+        
     async def char_ai_msg(self, texto, autor, canal):
         try:
 
-            resposta = await self.char_ai.enviar_mensagem(texto, autor.name)
-
+            self.disponivel = False
+            async with canal.typing():
+                resposta = await self.char_ai.enviar_mensagem(f"{autor.display_name} disse: {texto}")
             self.historico_conversa.append({
-                "role": autor.name,
+                "role": autor.display_name,
                 "content": texto
             })
 
@@ -90,6 +102,7 @@ class Disc_Bot(commands.Bot):
 
             self.salvar_historico()
             await canal.send(resposta)
+            self.disponivel = True
             return resposta
         except Exception as e:
             print(f"erro no character.ai: {e}")
