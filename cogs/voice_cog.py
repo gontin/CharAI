@@ -137,7 +137,7 @@ class VoiceCog(commands.Cog):
             for user_id in self.user_buffers:
                 total_bytes += len(self.user_buffers[user_id])
 
-            if total_bytes > 1000000:
+            if total_bytes > 500000:
                 self.ocupado_processando = True
 
                 await self.processar_voz()
