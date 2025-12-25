@@ -33,27 +33,12 @@ class CharacterManager:
     def _atualizar_ids(self, turn_obj):
         print("atualizando ids")
         try:
-            # 1. Tenta pegar Candidate ID
             candidato = turn_obj.get_primary_candidate()
             c_id = getattr(candidato, "candidate_id", None)
 
-            # 2. Tenta pegar Turn ID (Lógica Reforçada)
             t_id = None
-
-            # Tentativa A: Direto no objeto
             if hasattr(turn_obj, "turn_id"):
                 t_id = turn_obj.turn_id
-                print("TENTATIVA A FUNCIONOU")
-
-            # Tentativa B: Dentro de turn_key (que pode ser objeto ou dict)
-            if not t_id and hasattr(turn_obj, "turn_key"):
-                tk = turn_obj.turn_key
-                if isinstance(tk, dict):
-                    t_id = tk.get("turn_id")
-                    print("TENTATIVA B FUNCIONOU")
-                else:
-                    t_id = getattr(tk, "turn_id", None)
-                    print("OQ SOBROU")
                     
             if t_id and str(t_id) != "None":
                 self.last_turn_id = str(t_id)
@@ -71,13 +56,11 @@ class CharacterManager:
     async def enviar_mensagem(self, texto):
         if not self.client or not self.chat:
             raise Exception("SEU ANSIOSO CALMA KRL")
-
         msg_formatada = f"{texto}"
 
         resposta = await self.client.chat.send_message(
             self.char_id, self.chat.chat_id, msg_formatada
         )
-        candidato = resposta.get_primary_candidate()
 
         self._atualizar_ids(resposta)
 

@@ -103,6 +103,7 @@ class Disc_Bot(commands.Bot):
                 resposta = await self.char_ai.enviar_mensagem(
                     f"{autor.display_name} disse: {texto}"
                 )
+                
             self.historico_conversa.append(
                 {"role": autor.display_name, "content": texto}
             )
@@ -117,6 +118,7 @@ class Disc_Bot(commands.Bot):
             return resposta
         except Exception as e:
             print(f"erro no character.ai: {e}")
+            self.disponivel = True
             return None
 
 
