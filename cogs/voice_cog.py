@@ -22,16 +22,7 @@ class VoiceCog(commands.Cog):
         self.vc = None
         self.ocupado_processando = False
 
-        self.amy_names = [
-            " amy ",
-            " eime ",
-            " ami ",
-            " aime ",
-            " emmy ",
-            " emi ",
-            " m ",
-        ]
-
+        
         self.fiscal_de_silencio.start()
 
         # self.vosk_model = Model("model")
@@ -78,6 +69,8 @@ class VoiceCog(commands.Cog):
         if self.vc:
             if self.vc.is_connected():
                 self.vc.stop_listening()
+                
+                
         inicio = time.time()
         try:
             buffers_copia = self.user_buffers.copy()
@@ -93,18 +86,21 @@ class VoiceCog(commands.Cog):
             result = await asyncio.gather(*tasks_transcrever)
             valid_result = [r for r in result if r is not None]
             msg = ""
-            for i in valid_result:
+            if valid_result: 
+                for i in valid_result:
 
-                nome = self.user_names.get(i[0], f"user [{i[0]}]")
-                msg += f"{nome} disse: {i[1]}\n"
+                    nome = self.user_names.get(i[0], f"user [{i[0]}]")
+                    msg += f"{nome} disse: {i[1]}\n"
 
-                print(f"\n{nome} disse: {i[1]}")
+                    print(f"\n{nome} disse: {i[1]}")
+            else:
+                print("só erro")
+                self.vc.listen(voice_recv.BasicSink(self.callback))
+                return
 
             resposta = await self.bot.char_ai.enviar_mensagem(msg)
 
             print(f"\nAmy disse: {resposta}")
-            
-            
             
             audio_bytes = await self.bot.char_ai.gerar_voz(os.getenv("CHAR_VOZID"))
             if not audio_bytes:
@@ -122,6 +118,8 @@ class VoiceCog(commands.Cog):
             self.vc.play(
                 discord.FFmpegPCMAudio(caminho_resp),
             )
+            
+            
             print(f"Terminou de processar em {time.time()-inicio:.2f}")
             self.vc.listen(voice_recv.BasicSink(self.callback))
 
@@ -152,8 +150,7 @@ class VoiceCog(commands.Cog):
         agora = time.time()
 
         tempo_silencio = agora - self.ultimo_momento_fala_global
-
-        if tempo_silencio > 1.2:
+        if tempo_silencio > 0.8:
             total_bytes = 0
             for user_id in self.user_buffers:
                 total_bytes += len(self.user_buffers[user_id])

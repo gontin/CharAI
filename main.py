@@ -41,6 +41,7 @@ class Disc_Bot(commands.Bot):
         self.historico_conversa = self.ler_historico()
         self.active_tasks = set()
         self.disponivel = True
+        
 
         async def reboot_wrapper(ctx):
             await self.reboot(ctx)
