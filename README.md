@@ -1,4 +1,5 @@
 # Character.AI Discord Voice Bot (Amy)
+feito por gontin :3
 
 Um bot completo para Discord que integra as respostas e vozes do **Character.AI** diretamente no seu servidor. Ele não apenas conversa por texto de forma contextualizada, mas também é capaz de entrar em canais de voz, ouvir múltiplos usuários, transcrever o áudio em tempo real e responder com a voz gerada pela IA.
 
@@ -24,13 +25,3 @@ Um bot completo para Discord que integra as respostas e vozes do **Character.AI*
 - **[SciPy](https://scipy.org/) & [NumPy](https://numpy.org/)** (Processamento de arrays de áudio na memória)
 
 ---
-
-## Como instalar e rodar
-
-### 1. Pré-requisitos
-Certifique-se de ter o Python instalado na sua máquina. Além disso, para que o bot consiga processar e enviar áudio no Discord, é **obrigatório** ter o **FFmpeg** instalado no seu sistema e configurado no `PATH`.
-
-### 2. Clonando o repositório
-```bash
-git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-cd seu-repositorio
