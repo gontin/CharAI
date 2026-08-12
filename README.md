@@ -1,4 +1,4 @@
-# Character.AI Discord Voice Bot (Amy)
+# Character.AI Discord Voice Bot
 feito por gontin :3
 
 Um bot completo para Discord que integra as respostas e vozes do **Character.AI** diretamente no seu servidor. Ele não apenas conversa por texto de forma contextualizada, mas também é capaz de entrar em canais de voz, ouvir múltiplos usuários, transcrever o áudio em tempo real e responder com a voz gerada pela IA.
